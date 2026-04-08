@@ -1,0 +1,63 @@
+CREATE DATABASE db_toko;
+USE db_toko;
+CREATE TABLE produk (
+    id_produk INT AUTO_INCREMENT PRIMARY KEY,
+    nama_produk VARCHAR(50),
+    stok INT
+);
+CREATE TABLE penjualan (
+    id_jual INT AUTO_INCREMENT PRIMARY KEY,
+    id_produk INT,
+    jumlah INT
+);
+CREATE TRIGGER before_insert_penjualan
+BEFORE INSERT ON penjualan
+FOR EACH ROW
+SET NEW.jumlah = NEW.jumlah;
+
+CREATE TRIGGER after_insert_penjualan
+AFTER INSERT ON penjualan
+FOR EACH ROW
+UPDATE produk 
+SET stok = stok - NEW.jumlah 
+WHERE id_produk = NEW.id_produk;
+
+CREATE TRIGGER before_update_penjualan
+BEFORE UPDATE ON penjualan
+FOR EACH ROW
+SET NEW.jumlah = NEW.jumlah;
+
+CREATE TRIGGER after_update_penjualan
+AFTER UPDATE ON penjualan
+FOR EACH ROW
+UPDATE produk 
+SET stok = stok + OLD.jumlah - NEW.jumlah 
+WHERE id_produk = NEW.id_produk;
+
+CREATE TRIGGER before_delete_penjualan
+BEFORE DELETE ON penjualan
+FOR EACH ROW
+UPDATE produk 
+SET stok = stok + OLD.jumlah 
+WHERE id_produk = OLD.id_produk;
+
+CREATE TABLE log (
+    keterangan VARCHAR(100)
+);
+
+CREATE TRIGGER after_insert_log
+AFTER INSERT ON penjualan
+FOR EACH ROW
+INSERT INTO log VALUES ('data penjualan masuk');
+
+CREATE VIEW view_total_penjualan AS
+SELECT id_produk, SUM(jumlah) AS total
+FROM penjualan
+GROUP BY id_produk;
+
+CREATE VIEW view_stok_produk AS
+SELECT nama_produk, stok FROM produk;
+
+INSERT INTO produk (nama_produk, stok) VALUES ('Buku', 10);
+
+INSERT INTO penjualan (id_produk, jumlah) VALUES (1, 2);
